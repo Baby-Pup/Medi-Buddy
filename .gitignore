@@ -1,0 +1,129 @@
+ros2_ws/src/slam/maps/core.*
+ros2_ws/src/slam/maps/core.*
+
+# =============================================================
+# 🦾 ROS2 / Colcon / CMake Build Artifacts
+# =============================================================
+build/
+install/
+log/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.colcon*
+ament_cmake_core/
+CMakeFiles/
+CMakeCache.txt
+*.cmake
+*.launch.py~
+*.launch.xml~
+*.launch.yaml~
+*.launch
+*.world
+
+# =============================================================
+# 🧠 IDE / Editor / VSCode / JetBrains
+# =============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.cproject
+.settings/
+*.user
+*.workspace
+
+# =============================================================
+# 🐍 Python Environment / Dependencies
+# =============================================================
+.venv/
+env/
+venv/
+*.egg-info/
+.eggs/
+dist/
+build/
+*.spec
+
+# =============================================================
+# 🐳 Docker / Container Artifacts
+# =============================================================
+docker-compose.override.yml
+*.pid
+*.sock
+*.log
+*.tmp
+tmp/
+*.bak
+*.old
+
+# =============================================================
+# 🧱 ROS Bag / Map / Data / Simulation Outputs
+# =============================================================
+*.bag
+*.bag.active
+*.db3
+ros2_ws/src/slam/maps/*.pgm
+ros2_ws/src/slam/maps/*.yaml
+ros2_ws/src/slam/maps/*.core
+ros2_ws/src/slam/maps/core.*
+ros2_ws/src/slam/maps/*.dat
+ros2_ws/src/slam/maps/*.bt
+ros2_ws/src/slam/maps/*.sqlite
+ros2_ws/src/slam/maps/*.db
+
+# =============================================================
+# 💾 Generated / Sensor / Log Data
+# =============================================================
+*.csv
+*.tsv
+*.jsonl
+*.cache
+*.npy
+*.npz
+*.pt
+*.pth
+*.onnx
+*.h5
+*.weights
+*.mp4
+*.avi
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.zip
+*.tar
+*.tar.gz
+
+# =============================================================
+# 💣 Core Dumps / System Files
+# =============================================================
+core
+core.*
+*.core
+*.dump
+*.bak
+*.tmp
+*.temp
+*.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# =============================================================
+# 🚀 Miscellaneous / Personal / Test
+# =============================================================
+test/
+tests/
+test_*/
+logs/
+results/
+output/
+*.sh~
+*.out
+*.err
+*.sav
