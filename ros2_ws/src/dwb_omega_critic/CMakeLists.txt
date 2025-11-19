@@ -6,13 +6,12 @@ find_package(rclcpp REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
-
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
 include_directories(include)
 
-# 1. 라이브러리 이름은 명확하게
+# 1. 라이브러리 생성
 add_library(dwb_omega_critic SHARED src/omega_direction_critic.cpp)
 
 # 2. 의존성 연결
@@ -37,9 +36,16 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
-# 5. pluginlib.xml 설치 (내 패키지 share 폴더에만!)
+# 5. XML 파일 설치 (이거 다시 살립니다!)
 install(FILES pluginlib.xml
   DESTINATION share/${PROJECT_NAME}
+)
+
+# 6. ⭐ [핵심] Ament Index 강제 등록 ⭐
+# (매크로가 안 되니까 수동으로 빈 파일을 만들어서 꽂아버립니다)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dwb_omega_critic "")
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dwb_omega_critic
+  DESTINATION share/ament_index/resource_index/dwb_core
 )
 
 ament_package()
