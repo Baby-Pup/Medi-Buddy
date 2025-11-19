@@ -1,0 +1,5 @@
+.venv/
+*.log
+*.wav
+*.mp3
+test.py

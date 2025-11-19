@@ -1,0 +1,6 @@
+<library path="dwb_omega_critic"> <class type="dwb_omega_critic::OmegaDirectionCritic"
+         name="OmegaDirectionCritic"
+         base_class_type="dwb_core::TrajectoryCritic">
+    <description>Omega based trajectory critic</description>
+  </class>
+</library>
