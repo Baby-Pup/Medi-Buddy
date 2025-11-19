@@ -20,10 +20,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'bev_creator = future_prediction_pkg.bev_creator_node:main',
-            'bev_buffer = future_prediction_pkg.bev_buffer_node:main',
-            'onnx_future_predictor = future_prediction_pkg.onnx_future_predictor_node:main',
-            'heatmap_bias = future_prediction_pkg.heatmap_bias_node:main',
+            'bev_creator = ai_inference.bev_creator_node:main',
+            'bev_buffer = ai_inference.bev_buffer_node:main',
+            'onnx_future_predictor = ai_inference.onnx_future_predictor_node:main',
+            'heatmap_bias = ai_inference.heatmap_bias_node:main',
         ],
     },
 )

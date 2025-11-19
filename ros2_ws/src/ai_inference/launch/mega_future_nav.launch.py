@@ -43,16 +43,16 @@ def generate_launch_description():
         # 3) Hailo 미래 예측기
         Node(
             package='future_prediction_pkg',
-            executable='future_predictor_hailo',
-            name='hailo_future_predictor',
+            executable='onnx_future_predictor',
+            name='onnx_future_predictor',
             output='screen'
         ),
 
         # 4) Heatmap Bias (risk_map/omega_weights)
         Node(
             package='future_prediction_pkg',
-            executable='future_heatmap_bias',
-            name='future_heatmap_bias',
+            executable='heatmap_bias',
+            name='heatmap_bias',
             output='screen'
         ),
 
