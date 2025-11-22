@@ -7,7 +7,7 @@ from std_msgs.msg import Float32MultiArray
 
 GRID_SIZE = 256
 RESOLUTION = 0.1
-
+CENTER = GRID_SIZE // 2  # 128
 
 class RiskMapMarker(Node):
     def __init__(self):
@@ -31,7 +31,7 @@ class RiskMapMarker(Node):
     def color_from_value(self, v):
         """
         v: 0~1
-        초록색 (안전) → 빨강 (위험)
+        초록(안전) -> 빨강(위험)
         """
         v = float(np.clip(v, 0.0, 1.0))
         r = v
@@ -41,47 +41,63 @@ class RiskMapMarker(Node):
 
     def on_risk_map(self, msg: Float32MultiArray):
         data = np.array(msg.data, dtype=np.float32)
+        
         if data.size != GRID_SIZE * GRID_SIZE:
             return
 
+        # (H, W) = (Row, Col)
         risk = data.reshape(GRID_SIZE, GRID_SIZE)
 
         ma = MarkerArray()
         now = self.get_clock().now().to_msg()
-
         marker_id = 0
 
-        for y in range(GRID_SIZE):
-            for x in range(GRID_SIZE):
-                v = risk[y, x]
-                if v < 0.01:
-                    continue  # 너무 작은 값은 skip (성능 향상)
+        # 성능 최적화: 전체 픽셀을 다 돌면 느리므로 Step을 두거나
+        # numpy where로 유효한 인덱스만 추출하는 것이 좋음.
+        # 여기서는 가독성을 위해 이중 루프를 유지하되 좌표 계산만 수정함.
+        
+        for y in range(0, GRID_SIZE, 2): # (Optional) 2칸씩 건너뛰며 그리기 (부하 감소)
+            for x in range(0, GRID_SIZE, 2):
+                
+                v = risk[y, x] # y는 row, x는 col
+                
+                # 노이즈 제거 (너무 낮은 값은 안 그림)
+                if v < 0.1: 
+                    continue
 
                 r, g, b = self.color_from_value(v)
 
                 m = Marker()
-                m.header.frame_id = "base_link"
+                m.header.frame_id = "base_link" # 로봇 기준 좌표계
                 m.header.stamp = now
                 m.id = marker_id
                 marker_id += 1
 
                 m.type = Marker.CUBE
                 m.action = Marker.ADD
-                m.scale.x = RESOLUTION
-                m.scale.y = RESOLUTION
-                m.scale.z = 0.01
+                # 마커 크기
+                m.scale.x = RESOLUTION * 2 # 건너뛰었으니 조금 키움
+                m.scale.y = RESOLUTION * 2
+                m.scale.z = 0.05 # 높이 약간 줌
 
-                # base_link 중심에서 좌표 계산
-                m.pose.position.x = (x - GRID_SIZE/2) * RESOLUTION
-                m.pose.position.y = (y - GRID_SIZE/2) * RESOLUTION
-                m.pose.position.z = 0.02
+                # 🚨 [좌표 변환 수정 핵심]
+                # bev_creator: row = CENTER - (Real_X / res)
+                # 역산: Real_X = (CENTER - row) * res
+                # 여기서 row는 y, col은 x임.
+                
+                real_x = (CENTER - y) * RESOLUTION
+                real_y = (CENTER - x) * RESOLUTION
+
+                m.pose.position.x = real_x
+                m.pose.position.y = real_y
+                m.pose.position.z = 0.0  # 바닥에 깔기
 
                 m.pose.orientation.w = 1.0
 
                 m.color.r = r
                 m.color.g = g
                 m.color.b = b
-                m.color.a = 0.7
+                m.color.a = 0.6 # 약간 투명하게
 
                 ma.markers.append(m)
 

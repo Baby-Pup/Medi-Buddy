@@ -2,87 +2,44 @@
 import rclpy
 from rclpy.node import Node
 import numpy as np
-import cv2
-import math
-
+import onnxruntime as ort
 from std_msgs.msg import Float32MultiArray
-
-# Hailo infer helper
-from hailo_infer import HailoInfer
 
 # =========================
 #  CONFIGURATION
 # =========================
 GRID_SIZE = 256
 T_IN = 10
-T_OUT = 10
-POSE_DIM = 3
-RESOLUTION = 0.1
-CENTER = GRID_SIZE // 2
+# T_OUT = 10  # 추론 노드에선 굳이 안 써도 됨
+# POSE_DIM = 3 # 삭제됨 (Pose 안 씀)
 
-
-# =========================
-#  EGO-MOTION WARPING UTILS
-# =========================
-def get_pose(pose_arr):
-    return pose_arr
-
-def get_se2(x, y, theta):
-    cos_t = np.cos(theta)
-    sin_t = np.sin(theta)
-    return np.array([
-        [cos_t, -sin_t, x],
-        [sin_t,  cos_t, y],
-        [0,      0,     1]
-    ])
-
-def get_transform_matrix(source_pose, target_pose):
-    src_x, src_y, src_theta = source_pose
-    tgt_x, tgt_y, tgt_theta = target_pose
-
-    T_pix2metric = np.array([
-        [-RESOLUTION, 0, CENTER * RESOLUTION],
-        [0, -RESOLUTION, CENTER * RESOLUTION],
-        [0, 0, 1]
-    ])
-
-    SE2_src = get_se2(src_x, src_y, src_theta)
-    SE2_tgt = get_se2(tgt_x, tgt_y, tgt_theta)
-    T_rel = np.linalg.inv(SE2_tgt) @ SE2_src
-
-    T_metric2pix = np.linalg.inv(T_pix2metric)
-
-    M_total = T_metric2pix @ T_rel @ T_pix2metric
-    return M_total[:2, :]
-
-
-# =========================
-#  HAILO NODE
-# =========================
-class HailoFuturePredictor(Node):
+class OnnxFuturePredictor(Node):
     def __init__(self):
-        super().__init__("hailo_future_predictor")
+        super().__init__("onnx_future_predictor")
 
-        # ===============================
-        # 1. Hailo HEF Load
-        # ===============================
-        hef_path = "/home/ubuntu/ros2_ws/src/ai_inference/new.hef"
-        self.get_logger().info(f"📦 Loading Hailo HEF: {hef_path}")
+        # ======== 1. ONNX 모델 로드 ========
+        # (학습 후 생성된 onnx 파일 경로로 맞춰주세요)
+        onnx_path = "/home/ubuntu/ros2_ws/src/ai_inference/new.onnx"
+        self.get_logger().info(f"📦 Loading ONNX model: {onnx_path}")
 
-        self.hailo = HailoInfer(
-            hef_path=hef_path,
-            batch_size=1,
-            input_type="FLOAT32",
-            output_type="FLOAT32"
-        )
+        # Execution Provider 설정
+        # 라즈베리파이/PC 환경에 따라 CUDA가 없으면 CPU로 자동 전환됨
+        providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+        
+        try:
+            self.session = ort.InferenceSession(onnx_path, providers=providers)
+        except Exception as e:
+            self.get_logger().error(f"Failed to load ONNX: {e}")
+            raise e
 
-        # ===============================
-        # 2. ROS2 I/O
-        # ===============================
+        self.input_name = self.session.get_inputs()[0].name
+        self.output_name = self.session.get_outputs()[0].name
+
+        # ======== 2. Subscriber / Publisher ========
         self.sub = self.create_subscription(
             Float32MultiArray,
-            "/bev_pose_sequence",
-            self.on_bev_pose_sequence,
+            "/bev_pose_sequence", # 토픽 이름은 유지 (bev_buffer와 연결)
+            self.on_bev_sequence,
             10
         )
 
@@ -92,92 +49,53 @@ class HailoFuturePredictor(Node):
             10
         )
 
-        self.get_logger().info("🔮 Hailo Future Predictor Node Started")
+        self.get_logger().info("🔮 ONNX Future Predictor Node Started (No Warping).")
 
 
-    # ===============================
-    # 3. Main callback
-    # ===============================
-    def on_bev_pose_sequence(self, msg: Float32MultiArray):
+    def on_bev_sequence(self, msg: Float32MultiArray):
+        """
+        Warping 없이 들어온 BEV 시퀀스를 바로 추론
+        """
+        # 1. 데이터 받기
         seq_flat = np.array(msg.data, dtype=np.float32)
 
-        # ------ reshape ------
-        bev_data_size = T_IN * GRID_SIZE * GRID_SIZE
-        pose_data_size = T_IN * POSE_DIM
+        # 데이터 크기 검증
+        expected_size = T_IN * GRID_SIZE * GRID_SIZE
+        if seq_flat.size != expected_size:
+            self.get_logger().warn(f"⚠ Wrong sequence size. Expected {expected_size}, Got {seq_flat.size}")
+            return
 
-        bev_seq = seq_flat[:bev_data_size].reshape(T_IN, GRID_SIZE, GRID_SIZE)
-        pose_seq = seq_flat[bev_data_size:].reshape(T_IN, POSE_DIM)
+        # 2. Reshape & Batch Dimension 추가
+        # Flat -> (10, 256, 256) -> (1, 10, 256, 256)
+        # Pose 데이터 분리나 Warping 과정이 싹 사라짐
+        bev_input = seq_flat.reshape(1, T_IN, GRID_SIZE, GRID_SIZE)
 
-        # ===============================
-        #  Ego-motion Warping
-        # ===============================
-        anchor_pose = get_pose(pose_seq[T_IN - 1])
-        warped = []
-
-        for i in range(T_IN):
-            cur_bev = bev_seq[i]
-            cur_pose = pose_seq[i]
-
-            if i == T_IN - 1:
-                warped.append(cur_bev)
-                continue
-
-            M = get_transform_matrix(cur_pose, anchor_pose)
-            w = cv2.warpAffine(
-                cur_bev, M, (GRID_SIZE, GRID_SIZE),
-                flags=cv2.INTER_NEAREST,
-                borderMode=cv2.BORDER_CONSTANT,
-                borderValue=0
+        # 3. ONNX 추론
+        try:
+            outputs = self.session.run(
+                [self.output_name],
+                {self.input_name: bev_input}
             )
-            warped.append(w)
+            
+            # outputs[0] shape: (1, 10, 256, 256)
+            future_logits = outputs[0]
 
-        # final shape: (1, T_IN, 256, 256)
-        bev_input = np.stack(warped, axis=0)[np.newaxis, :, :, :]
+            # 4. Sigmoid (Logits -> Probability)
+            # 0~1 사이 확률값으로 변환
+            future_occ = 1 / (1 + np.exp(-future_logits))
 
-        # ===============================
-        #  IMPORTANT: Convert to NHWC
-        #  (1, 10, 256, 256) → (1, 256, 256, 10)
-        # ===============================
-        bev_input_nhwc = np.transpose(bev_input, (0, 2, 3, 1))
+            # 5. 결과 발행
+            out_msg = Float32MultiArray()
+            out_msg.data = future_occ.flatten().tolist()
+            self.pub.publish(out_msg)
 
-        # ===============================
-        # 4. Hailo inference (async)
-        #    - result will be returned in callback
-        # ===============================
-        self.hailo.run(
-            input_batch=[bev_input_nhwc],
-            inference_callback_fn=self.handle_hailo_output
-        )
-
-
-    # ===============================
-    # 5. Hailo async callback
-    # ===============================
-    def handle_hailo_output(self, bindings_list, infer_job):
-        # outputs = dict: {output_name: np.ndarray(...)}
-        outputs = {}
-        for name, outbuf in bindings_list[0].output().get_buffers().items():
-            outputs[name] = outbuf
-
-        # Your model has one output → take first
-        future_logits = list(outputs.values())[0]  # (1,256,256,T_OUT)
-
-        # Hailo output is NHWC → convert back to NCHW
-        logits_nchw = np.transpose(future_logits, (0, 3, 1, 2))  # (1,10,256,256)
-
-        # sigmoid
-        future_occ = 1 / (1 + np.exp(-logits_nchw))
-
-        # publish
-        msg = Float32MultiArray()
-        msg.data = future_occ.flatten().tolist()
-        self.pub.publish(msg)
-
+        except Exception as e:
+            self.get_logger().error(f"Inference Error: {e}")
 
 
 def main(args=None):
     rclpy.init(args=args)
-    node = HailoFuturePredictor()
+    node = OnnxFuturePredictor()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
