@@ -25,7 +25,7 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'detection_publisher = medi_buddy_facedetection.detection_publisher:main',
+            'detection_subscriber = medi_buddy_facedetection.detection_subscriber:main',
         ],
     },
 )
