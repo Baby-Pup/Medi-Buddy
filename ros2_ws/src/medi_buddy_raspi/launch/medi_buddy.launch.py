@@ -18,14 +18,6 @@ def generate_launch_description():
     )
 
     map_path = LaunchConfiguration('map')
-
-
-    semantic_nav_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(navigation_package_path, 'launch/yhk_semantic_nav.launch.py')
-        ),
-        launch_arguments={'map': map_path}.items()
-    )
     
     # Camera publisher
     camera_publisher = Node(
@@ -67,12 +59,40 @@ def generate_launch_description():
             output='screen'
         )
 
+    # Semantic router
+    semantic_router = Node(
+        package='navigation',
+        executable='semantic_router_node',  # setup.py entry_points와 동일해야 함
+        name='semantic_router',
+        output='screen',
+        parameters=[{
+            'poi_yaml_path': '/home/ubuntu/ros2_ws/src/navigation/config/poi_map.yaml'
+        }]
+    )
+
+    # Nav2 bringup launch
+    nav_bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(navigation_package_path, 'launch/navigation.launch.py')
+        ),
+        launch_arguments={'map': map_path}.items()
+    )
+
+    semantic_nav_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(navigation_package_path, 'launch/yhk_semantic_nav.launch.py')
+        ),
+        launch_arguments={'map': map_path}.items()
+    )
+
     return LaunchDescription([
         map_arg,
         camera_publisher,
         qrcode_publisher,
         detection_subscriber,
         audio_publisher,
-        audio_reciever,
-        # semantic_nav_launch
+        # audio_reciever,
+        # semantic_router,
+        # nav_bringup
+        #semantic_nav_launch
     ])

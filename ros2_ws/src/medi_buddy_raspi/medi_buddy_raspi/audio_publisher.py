@@ -20,6 +20,8 @@ class AudioRecorderNode(Node):
 
         # 음성 파일(mp3 base64) 퍼블리셔
         self.audio_pub = self.create_publisher(String, '/recorded_audio_mp3', 10)
+        # robot_status 퍼블리셔
+        self.status_pub = self.create_publisher(String, '/robot_status', 10)
 
         # ------------------------------
         # 녹음 설정
@@ -29,7 +31,7 @@ class AudioRecorderNode(Node):
         self.frame_duration = 30  # ms
         self.frame_size = int(self.mic_rate * self.frame_duration / 1000)
 
-        self.threshold = 1200  # RMS threshold
+        self.threshold = 5000  # RMS threshold
 
         self.get_logger().info("🎤 Audio Recorder Node Started")
 
@@ -72,6 +74,13 @@ class AudioRecorderNode(Node):
                 if num_voiced > 0.7 * ring_buffer.maxlen:
                     triggered = True
                     self.get_logger().info("🎙️ 음성 감지 → 녹음 시작")
+
+                    # 음성 처리 시작 상태 전송
+                    status_msg = String()
+                    status_msg.data = "audio_incoming"
+                    self.status_pub.publish(status_msg)
+                    self.get_logger().info("📡 상태 전송: audio_incoming")
+                    
                     voiced_frames.extend([f for f, s in ring_buffer])
                     ring_buffer.clear()
 
@@ -125,6 +134,7 @@ class AudioRecorderNode(Node):
 
     def run(self):
         """녹음 → mp3 인코딩 → ROS 퍼블리시"""
+
         encoded_mp3 = self.record_voice()
 
         msg = String()
