@@ -20,7 +20,7 @@ def generate_launch_description():
     # === 인자 정의 ===
     map_arg = DeclareLaunchArgument(
         'map',
-        default_value='/home/ubuntu/ros2_ws/src/slam/maps/map_01.yaml',
+        default_value='/home/ubuntu/ros2_ws/src/slam/maps/map_hj.yaml',
         description='Path to map yaml file'
     )
 

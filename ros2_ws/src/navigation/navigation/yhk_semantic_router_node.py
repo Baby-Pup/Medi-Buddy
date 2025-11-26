@@ -11,7 +11,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
 
-from std_msgs.msg import String, Empty
+from std_msgs.msg import String, Bool
 from geometry_msgs.msg import PoseStamped, Quaternion
 from action_msgs.msg import GoalStatus
 from nav2_msgs.action import NavigateToPose
@@ -30,12 +30,14 @@ class SemanticRouterNode(Node):
     def __init__(self):
         super().__init__("semantic_router")
 
+        self._nav_enabled = False
+
         # ========== POI 파일 로드 ==========
         try:
             default_poi_path = os.path.join(
                 get_package_share_directory("navigation"), "config", "poi_map.yaml"
             )
-        except Exception:
+        except Exception:   
             default_poi_path = os.path.expanduser(
                 "~/ros2_ws/src/navigation/config/poi_map.yaml"
             )
@@ -70,13 +72,33 @@ class SemanticRouterNode(Node):
             String, "/destination_list", self.on_destination_list, 10
         )
         self._trigger_sub = self.create_subscription(
-            Empty, "/next_trigger", self.on_next_trigger, 10
+            Bool, "/face_detection_status", self.on_next_trigger, 10
+        )
+        self._nav_status_sub = self.create_subscription(
+            Bool, "/nav_status", self.on_nav_status, 10
         )
 
         self._event_pub = self.create_publisher(NavEvent, "/nav_event", 10)
         self._nav_client = ActionClient(self, NavigateToPose, "/navigate_to_pose")
 
-        self.get_logger().info("✅ semantic_router_node ready")
+        self.get_logger().info("✅ semantic_router_node ready (nav_status locked)")
+
+    # ------------------------------------------------
+    # nav_status Callback
+    # ------------------------------------------------
+    def on_nav_status(self, msg: Bool):
+        """얼굴 인식 노드에서 nav_status=True가 오면 주행 허가"""
+        self._nav_enabled = msg.data
+
+        if self._nav_enabled:
+            self.get_logger().info("🚀 nav_status=True 수신 — 주행 허가됨")
+            
+            # 대기 중이던 루트 출발 시도
+            if self._arrived_waiting and not self._detour_mode:
+                self._go_next_in_route()
+
+        else:
+            self.get_logger().warn("⛔ nav_status=False — 모든 주행 일시중지")
 
     # ------------------------------------------------
     # Utility
@@ -134,18 +156,22 @@ class SemanticRouterNode(Node):
     # Callbacks
     # ------------------------------------------------
     def on_destination_list(self, msg: String):
-        """고정 루트 전체 수신"""
         items = [x.strip().lower() for x in msg.data.split(",") if x.strip()]
         if not items:
             self.get_logger().warn("빈 destination_list 수신—무시")
             return
 
-        # 새 루트 설정: 첫 목적지로 즉시 출발
         self._route_list = deque(items)
         self._detour_mode = False
         self._pending_goal = None
         self._arrived_waiting = False
+
         self.get_logger().info(f"📜 루트 수신: {list(self._route_list)}")
+
+        # 🔒 nav_status=False라면 바로 출발하면 안 됨
+        if not self._nav_enabled:
+            self.get_logger().warn("🚫 nav_status=False → 출발 보류")
+            return
 
         self._go_next_in_route()
 
@@ -153,6 +179,11 @@ class SemanticRouterNode(Node):
         """모든 단일 목적지 요청 (루트 내/외 구분)"""
         name = (req.destination_name or "").strip().lower()
         if not name:
+            return
+
+        # nav_status=False → Detour도 불가능
+        if not self._nav_enabled:
+            self.get_logger().warn(f"🚫 nav_status=False → Detour 요청 '{name}' 보류")
             return
 
         # 루트 내 목적지면 루트 로직으로 처리되니 여기선 무시
@@ -182,40 +213,50 @@ class SemanticRouterNode(Node):
 
         self._handle_detour(name)
 
-    def on_next_trigger(self, _msg):
-        """얼굴 인식 or 키 입력 등으로 다음 이동 허가"""
-        if self._detour_mode and self._pending_goal:
-            # Detour 종료 → 복귀 대상으로 이동
-            self.get_logger().info(f"✅ Detour 완료 — 복귀: {self._pending_goal}")
-            goal = self._pending_goal
-            self._pending_goal = None
-            self._detour_mode = False
+    def on_next_trigger(self, msg):
+        if msg.data:
+            if not self._nav_enabled:
+                self.get_logger().warn("🚫 nav_status=False → NEXT_TRIGGER 무시")
+                return
 
-            if goal == "__home__":
-                self._go_home()
-            else:
-                self._go_to(goal)
-            return
+            if self._detour_mode and self._pending_goal:
+                self.get_logger().info(f"✅ Detour 완료 — 복귀: {self._pending_goal}")
+                goal = self._pending_goal
+                self._pending_goal = None
+                self._detour_mode = False
 
-        # 일반 루트 진행(다음 큐 목적지로)
-        self._go_next_in_route()
+                if goal == "__home__":
+                    self._go_home()
+                else:
+                    self._go_to(goal)
+                return
+
+            # 일반 루트 진행
+            self._go_next_in_route()
 
     # ------------------------------------------------
     # Navigation helpers
     # ------------------------------------------------
     def _go_next_in_route(self):
-        """루트 리스트에서 다음 목적지로 이동"""
+        if not self._nav_enabled:
+            self.get_logger().warn("🚫 nav_status=False → 루트 이동 보류")
+            self._arrived_waiting = True
+            return
+
         if not self._route_list:
-            self.get_logger().info("🎯 모든 루트 완료! 홈 포인트로 복귀 시작")
+            self.get_logger().info("🎯 모든 루트 완료! 홈으로 복귀")
             self._go_home()
             return
 
         next_dest = self._route_list.popleft()
-        self.get_logger().info(f"➡️ 다음 목적지: {next_dest}")
         self._go_to(next_dest)
 
     def _handle_detour(self, name: str):
         """임시 목적지(Detour) 처리"""
+        if not self._nav_enabled:
+            self.get_logger().warn(f"🚫 nav_status=False → Detour '{name}' 보류")
+            return
+            
         # 현재 Nav2 goal 취소 (주행 중이라면)
         if self._current_goal_handle is not None:
             try:
@@ -229,6 +270,11 @@ class SemanticRouterNode(Node):
 
     def _go_to(self, name: str):
         """Nav2 액션 클라이언트로 이동 명령"""
+        if not self._nav_enabled:
+            self.get_logger().warn(f"🚫 nav_status=False → 이동 '{name}' 보류")
+            self._arrived_waiting = True
+            return
+
         pose = self._get_pose_for_name(name)
         if not pose:
             self._publish_event("CANCELLED", name)
@@ -261,6 +307,11 @@ class SemanticRouterNode(Node):
 
     def _go_home(self):
         """모든 목적지 완료 후 홈 포인트로 복귀"""
+        if not self._nav_enabled:
+            self.get_logger().warn("🚫 nav_status=False → 홈 복귀 보류")
+            self._arrived_waiting = True
+            return
+
         x, y, yaw = self._home_pose
         ps = PoseStamped()
         ps.header.frame_id = "map"
