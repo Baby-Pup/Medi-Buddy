@@ -40,9 +40,9 @@ amcl:
     scan_topic: scan_raw
     set_initial_pose: True
     initial_pose: 
-      x: -1.86
-      y: -0.666
-      yaw: 0.012
+      x: 0.0
+      y: 0.0
+      yaw: 0.07
 
 amcl_map_client:
   ros__parameters:
