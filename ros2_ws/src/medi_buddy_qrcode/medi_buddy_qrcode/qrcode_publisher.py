@@ -16,28 +16,9 @@ class QrCodeSubscriber(Node):
         super().__init__('qr_code_subscriber')
         
         # 목적지 퍼블리셔
-        self.destination_pub = self.create_publisher(
-            String, 
-            DESTINATION_TOPIC,
-            10
-        )
-        self.get_logger().info(f'Publishing destination to {DESTINATION_TOPIC}')
-
-        # 이름 퍼블리셔
-        self.client_pub = self.create_publisher(
-            String,
-            CLIENT_NAME_TOPIC,
-            10
-        )
-        self.get_logger().info(f'Publishing client name to {CLIENT_NAME_TOPIC}')
-
-        # robot_status 퍼블리셔
-        self.status_pub = self.create_publisher(
-            String,
-            STATUS_TOPIC,
-            10
-        )
-        self.get_logger().info(f'Robot status publisher initialized: {STATUS_TOPIC}')
+        self.destination_pub = self.create_publisher(String, DESTINATION_TOPIC, 10)
+        self.client_pub = self.create_publisher(String, CLIENT_NAME_TOPIC, 10)
+        self.status_pub = self.create_publisher(String, STATUS_TOPIC, 10)
 
         # 얼굴 인코딩 상태
         self.face_ready = False
@@ -48,28 +29,34 @@ class QrCodeSubscriber(Node):
             10
         )
 
-        # 카메라 이미지 구독
+        # 카메라 구독 핸들 (처음에는 None)
         self.bridge = CvBridge()
-        self.subscription = self.create_subscription(
-            Image,
-            IMAGE_TOPIC,
-            self.image_callback,
-            10
-        )
+        self.image_subscription = None   # <--- 처음엔 구독하지 않음
 
         # QR Detector
         self.qrd = cv2.QRCodeDetector()
         self.last_published_data = ""
+        self.qr_scanned = False 
 
 
     # 얼굴 인코딩 완료 콜백
     def face_encoded_callback(self, msg: Bool):
         self.face_ready = msg.data
 
+        # 얼굴 인코딩 완료 → 이미지 구독 시작
+        if self.face_ready and self.image_subscription is None:
+            self.image_subscription = self.create_subscription(
+                Image,
+                IMAGE_TOPIC,
+                self.image_callback,
+                10
+            )
+            self.get_logger().info("📸 Face encoded — Started subscribing to /camera/image_raw")
+
 
     # 이미지 콜백 (QR 읽기)
     def image_callback(self, msg):
-        if not self.face_ready:
+        if self.qr_scanned:
             return
 
         try:
@@ -78,56 +65,65 @@ class QrCodeSubscriber(Node):
             self.get_logger().error(f"CvBridge conversion error: {e}")
             return
 
-        data, box, _ = self.qrd.detectAndDecode(frame)
+        if frame is None:
+            self.get_logger().error("Received empty frame (None). Skipping.")
+            return
+
+        if not hasattr(frame, "shape"):
+            self.get_logger().error("Invalid frame received (no shape).")
+            return
+
+        if frame.shape[0] == 0 or frame.shape[1] == 0:
+            self.get_logger().error(f"Invalid frame shape: {frame.shape}")
+            return
+
+        # QR 디코드
+        try:
+            data, box, _ = self.qrd.detectAndDecode(frame)
+        except Exception as e:
+            self.get_logger().error(f"detectAndDecode() error: {e}")
+            return
+
+        # data, box, _ = self.qrd.detectAndDecode(frame)
 
         if data:
             client_name, destination_string = self._parse_qr_data(data)
 
-            # 아무 데이터도 없으면 skip
             if not destination_string or not client_name:
                 return
 
-            # 이전과 동일한 목적지면 skip
             if destination_string == self.last_published_data:
                 return
 
             self.last_published_data = destination_string
             self.publish_all(client_name, destination_string)
 
+            # QR 스캔 완료 → 이미지 구독 취소
+            self.qr_scanned = True
+            self.destroy_subscription(self.image_subscription)
+            self.image_subscription = None
+            self.get_logger().info("🛑 QR scan complete — Stopped subscribing to /camera/image_raw")
 
-    # QR 데이터 파싱 함수
+
+    # QR 데이터 파싱
     def _parse_qr_data(self, raw_data: str):
-        """
-        이름: 채서린
-        ----------
-        1. 채혈실
-        2. X-ray실
-        3. 물리치료실
-        4. 수납
-        """
-
         lines = [line.strip() for line in raw_data.split('\n') if line.strip()]
 
         client_name = ""
         destination_list = []
 
         for line in lines:
-
-            # 이름 추출
             if line.startswith("이름:"):
                 client_name = line.replace("이름:", "").strip()
-
-            # 목적지 목록 추출
             elif len(line) > 2 and line[0].isdigit() and line[1] == '.':
                 destination = line[2:].strip()
                 destination_list.append(destination)
 
         destination_string = ", ".join(destination_list)
-
         return client_name, destination_string
 
 
-    # 데이터 퍼블리시
+    # 퍼블리시 함수
     def publish_all(self, client_name, destination_string):
 
         # 1) 이름 퍼블리시
@@ -142,7 +138,7 @@ class QrCodeSubscriber(Node):
         self.destination_pub.publish(dest_msg)
         self.get_logger().info(f'📢 Published Destinations: "{destination_string}"')
 
-        # 3) 상태 퍼블리시 (qr_complete)
+        # 3) robot_status 퍼블리시
         status_msg = String()
         status_msg.data = "qr_complete"
         self.status_pub.publish(status_msg)
@@ -151,10 +147,9 @@ class QrCodeSubscriber(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
     cv2.setLogLevel(1)
     node = QrCodeSubscriber()
-    
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
