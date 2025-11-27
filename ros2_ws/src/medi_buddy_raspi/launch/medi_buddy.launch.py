@@ -91,8 +91,8 @@ def generate_launch_description():
         qrcode_publisher,
         detection_subscriber,
         audio_publisher,
-        # audio_reciever,
-        # semantic_router,
-        # nav_bringup
+        audio_reciever,
+        semantic_router,
+        nav_bringup
         #semantic_nav_launch
     ])
