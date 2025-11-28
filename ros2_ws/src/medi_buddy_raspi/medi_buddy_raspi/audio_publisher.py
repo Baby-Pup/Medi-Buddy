@@ -31,7 +31,7 @@ class AudioRecorderNode(Node):
         self.frame_duration = 30  # ms
         self.frame_size = int(self.mic_rate * self.frame_duration / 1000)
 
-        self.threshold = 1200  # RMS threshold
+        self.threshold = 2000  # RMS threshold
 
         self.get_logger().info("🎤 Audio Recorder Node Started")
 
