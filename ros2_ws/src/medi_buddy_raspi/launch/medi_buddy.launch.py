@@ -90,9 +90,9 @@ def generate_launch_description():
         camera_publisher,
         qrcode_publisher,
         detection_subscriber,
-        # audio_publisher,
-        # audio_reciever,
+        audio_publisher,
+        audio_reciever,
         semantic_router,
-        # nav_bringup
+        nav_bringup
         #semantic_nav_launch
     ])
