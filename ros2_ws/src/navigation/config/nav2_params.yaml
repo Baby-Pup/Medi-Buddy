@@ -136,12 +136,12 @@ local_costmap:
       width: 3
       height: 3
       resolution: 0.03
-      robot_radius: 0.1 # 0.05
+      robot_radius: 0.05 # 0.05
       plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 2.0 # 2.0
-        inflation_radius: 0.13 # 0.05
+        inflation_radius: 0.05 # 0.05
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
@@ -198,7 +198,7 @@ global_costmap:
           data_type: "LaserScan"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
-          obstacle_max_range: 35.0 # 2.5
+          obstacle_max_range: 2.5 # 2.5 수정버전 35
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
