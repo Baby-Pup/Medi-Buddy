@@ -1,0 +1,76 @@
+# === ?? OS / ??? ===
+.DS_Store
+Thumbs.db
+
+# Vim / Emacs
+*.swp
+*.swo
+*~
+.#*
+
+# VSCode / JetBrains
+.vscode/
+.idea/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# ????
+.venv/
+venv/
+env/
+.env/
+
+# === ROS2 / colcon ?????? ===
+build/
+install/
+log/
+.colcon/
+
+# catkin ??? (?? ?? ?? ??)
+devel/
+devel_isolated/
+build_isolated/
+
+# rosdep ??
+rosdep.yaml
+rosdep-install.log
+
+# === CMake / ?? ??? ===
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.o
+*.so
+*.a
+*.out
+
+# === rosbag / ?? ?? (??? ?? ?) ===
+*.bag
+*.bag.active
+*.db3
+
+# === ?? ? ?? ===
+.cache/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Hailo ? ?? ??? (??? ?? ??)
+*.mp4
+*.avi
+*.npy
+*.npz
+
+
+frames_new/
+
+core*
