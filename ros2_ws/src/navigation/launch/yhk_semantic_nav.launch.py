@@ -39,13 +39,13 @@ def generate_launch_description():
         launch_arguments={'map': map_path}.items()
     )
 
-    # # === RViz (시각화) ===
-    # rviz = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         os.path.join(pkg_launch_dir, 'rviz_navigation.launch.py')
-    #     ),
-    #     launch_arguments={'map': map_path}.items()
-    # )
+    # === RViz (시각화) ===
+    rviz = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_launch_dir, 'rviz_navigation.launch.py')
+        ),
+        launch_arguments={'map': map_path}.items()
+    )
 
     # === Semantic Router Node ===
     semantic_router = Node(
@@ -62,6 +62,6 @@ def generate_launch_description():
     return LaunchDescription([
         map_arg,
         nav_bringup,
-        # rviz,
+        rviz,
         semantic_router
     ])
