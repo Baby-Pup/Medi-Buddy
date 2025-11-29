@@ -72,5 +72,5 @@ Makefile
 
 
 frames_new/
-
+*.csv
 core*
