@@ -25,54 +25,50 @@ RESOLUTION = 0.1
 CENTER = GRID_SIZE // 2
 RANGE_MAX = 3.2
 
-# LiDAR front only FOV
-THETA_MIN = -np.pi/2   # -90 deg
-THETA_MAX = +np.pi/2   # +90 deg
+# LiDAR front FOV (-90 ~ +90 deg)
+THETA_MIN = -np.pi/2
+THETA_MAX = +np.pi/2
 
 # AI Buffer
 T_IN = 8
 HEF_PATH = "/home/ubuntu/ros2_ws/src/ai_inference/ai_inference/hailo_early.hef"
 
-# Risk Calculation
-NUM_SECTORS = 18        # 10° resolution over 180° front view
+# Risk (front only / 18 sectors)
+NUM_SECTORS = 18
 ALPHA = 3.0
 CELL_SIZE = 0.1
 DIST_DECAY = 0.4
-
-MID_START = 4
-MID_END = 10            # Use t+4 ~ t+10 mid frames
+RISK_FRAME = 10     # t+10 frame
 
 
 class MegaInferenceNode(Node):
     def __init__(self):
         super().__init__("mega_inference_node")
 
-        # 1. Internal buffer
+        # 1. Buffer for last 8 BEVs
         self.buffer = []
 
-        # 2. Hailo init
+        # 2. BEV preallocated (1D flat)
+        self.bev_flat = np.zeros(GRID_SIZE * GRID_SIZE, dtype=np.float32)
+        self.bev = self.bev_flat.reshape((GRID_SIZE, GRID_SIZE))
+
+        # 3. Hailo init
         self.pipeline = None
         self.init_hailo()
 
-        # 3. Raycast LUT for front 18 sectors
+        # 4. Sector LUT
         self.init_raycast_lut()
 
-        # 4. Laser subscriber
+        # 5. ROS Comms
         self.sub = self.create_subscription(
-            LaserScan,
-            "/scan_raw",
-            self.on_scan,
-            10
+            LaserScan, "/scan_raw", self.on_scan, 10
         )
 
-        # 5. Publish omega weights
         self.pub_omega = self.create_publisher(
-            Float32MultiArray,
-            "/future_bias/omega_weights",
-            10
+            Float32MultiArray, "/future_bias/omega_weights", 10
         )
 
-        self.get_logger().info("🚀 Mega Node (Front 18 sectors) Started")
+        self.get_logger().info("🚀 Mega Node (64×64 / 18 sectors / LD19 angle-fixed) Started")
 
     # ==========================================
     # Hailo Init
@@ -82,9 +78,9 @@ class MegaInferenceNode(Node):
             self.target = VDevice()
             self.hef = HEF(HEF_PATH)
             cfg = ConfigureParams.create_from_hef(
-                self.hef,
-                interface=HailoStreamInterface.PCIe
+                self.hef, interface=HailoStreamInterface.PCIe
             )
+
             self.network_groups = self.target.configure(self.hef, cfg)
             self.network_group = self.network_groups[0]
             self.network_group_params = self.network_group.create_params()
@@ -105,44 +101,42 @@ class MegaInferenceNode(Node):
             self.get_logger().error(f"Hailo Init Error: {e}")
 
     # ==========================================
-    # Raycast LUT (Front 180° only / 18 sectors)
+    # Sector LUT (front 18 sectors)
     # ==========================================
     def init_raycast_lut(self):
         self.ray_lut = []
-        max_ray_steps = GRID_SIZE // 2
+        max_ray = GRID_SIZE // 2
 
-        # front FOV: -90° ~ +90°
         fov_min = -np.pi/2
         fov_max = +np.pi/2
         fov = fov_max - fov_min
 
         for i in range(NUM_SECTORS):
             angle_center = fov_min + (i + 0.5) * (fov / NUM_SECTORS)
-            cos_a = np.cos(angle_center)
-            sin_a = np.sin(angle_center)
+            ca = np.cos(angle_center)
+            sa = np.sin(angle_center)
 
-            ys, xs, attens = [], [], []
+            ys, xs, att = [], [], []
 
-            for step in range(2, max_ray_steps):
-                row = CENTER - step * cos_a
-                col = CENTER - step * sin_a
+            for step in range(2, max_ray):
+                row = CENTER - step * ca
+                col = CENTER - step * sa
+
                 iy = int(round(row))
                 ix = int(round(col))
 
-                if ix < 0 or ix >= GRID_SIZE or iy < 0 or iy >= GRID_SIZE:
+                if not (0 <= ix < GRID_SIZE and 0 <= iy < GRID_SIZE):
                     break
 
-                dist_m = step * CELL_SIZE
-                atten = np.exp(-DIST_DECAY * dist_m)
-
+                dist = step * CELL_SIZE
                 ys.append(iy)
                 xs.append(ix)
-                attens.append(atten)
+                att.append(np.exp(-DIST_DECAY * dist))
 
             self.ray_lut.append({
                 'y': np.array(ys, dtype=int),
                 'x': np.array(xs, dtype=int),
-                'atten': np.array(attens, dtype=np.float32)
+                'atten': np.array(att, dtype=np.float32)
             })
 
     @staticmethod
@@ -150,91 +144,129 @@ class MegaInferenceNode(Node):
         return 1 / (1 + np.exp(-x))
 
     # ==========================================
-    # Main Callback
+    # Main callback
     # ==========================================
     def on_scan(self, msg: LaserScan):
         if self.pipeline is None:
             return
 
-        # 1. LiDAR -> BEV
-        ranges = np.array(msg.ranges, dtype=np.float32)
-        angles = msg.angle_min + np.arange(len(ranges)) * msg.angle_increment
+        ranges = np.asarray(msg.ranges, dtype=np.float32)
+        N = len(ranges)
 
+        # ----------------------------------------------------------
+        # 1) Create angle array
+        # ----------------------------------------------------------
+        angles = msg.angle_min + np.arange(N) * msg.angle_increment
+
+        # ✅ 올바른 랩핑: 0rad = 로봇 정면 유지, [-π, π]로만 바꿈
+        angles = (angles + np.pi) % (2*np.pi) - np.pi
+
+        cos_table = np.cos(angles)
+        sin_table = np.sin(angles)
+
+        # ----------------------------------------------------------
+        # 3) mask (front 180°)
+        # ----------------------------------------------------------
         mask = (
-            (angles >= THETA_MIN) &
-            (angles <= THETA_MAX) &
             (ranges > 0.03) &
             (ranges < RANGE_MAX) &
+            (angles >= THETA_MIN) &  # -90°
+            (angles <= THETA_MAX) &  # +90°
             np.isfinite(ranges)
         )
 
         r = ranges[mask]
-        th = angles[mask]
+        cosv = cos_table[mask]
+        sinv = sin_table[mask]
 
-        x = r * np.cos(th)
-        y = r * np.sin(th)
+        # ----------------------------------------------------------
+        # 4) LiDAR → BEV (fast)
+        # ----------------------------------------------------------
+        x = r * cosv
+        y = r * sinv
 
         rows = np.floor(CENTER - (x / RESOLUTION)).astype(int)
         cols = np.floor(CENTER - (y / RESOLUTION)).astype(int)
 
-        valid_rc = (
+        valid = (
             (rows >= 0) & (rows < GRID_SIZE) &
             (cols >= 0) & (cols < GRID_SIZE)
         )
 
-        bev = np.zeros((GRID_SIZE, GRID_SIZE), dtype=np.float32)
-        bev[rows[valid_rc], cols[valid_rc]] = 1.0
+        self.bev_flat.fill(0)
+        idx = rows[valid] * GRID_SIZE + cols[valid]
+        self.bev_flat[idx] = 1.0
 
-        # 2. Buffering
-        self.buffer.append(bev)
+        bev = self.bev  # view reshape
+
+        # ----------------------------------------------------------
+        # 5) Sequence buffer
+        # ----------------------------------------------------------
+        self.buffer.append(bev.copy())
         if len(self.buffer) > T_IN:
             self.buffer.pop(0)
         if len(self.buffer) < T_IN:
             return
 
         try:
-            # 3. Hailo inference
+            # ----------------------------------------------------------
+            # 6) Hailo inference
+            # ----------------------------------------------------------
             seq = np.stack(self.buffer, axis=0).transpose(1, 2, 0)
-            input_tensor = np.ascontiguousarray(seq[np.newaxis, ...], dtype=np.float32)
+            input_tensor = np.ascontiguousarray(
+                seq[np.newaxis, ...], dtype=np.float32
+            )
 
-            input_data = {self.input_name: input_tensor}
-            raw = self.pipeline.infer(input_data)[self.output_name]
+            raw = self.pipeline.infer({self.input_name: input_tensor})[self.output_name]
             prob = self.sigmoid(raw)
-
             future_pred = prob[0].transpose(2, 0, 1)
 
-            # 4. Risk Map (single future frame)
-            RISK_FRAME = 10  # t+10
+            # ----------------------------------------------------------
+            # 7) Risk map (t+10)
+            # ----------------------------------------------------------
             risk_map = future_pred[RISK_FRAME]
 
-            # 5. Front 18-sector risk
+            # ----------------------------------------------------------
+            # 8) Sector risk (only near 40cm region)
+            # ----------------------------------------------------------
             sector_risks = np.zeros(NUM_SECTORS, dtype=np.float32)
+
+            NEAR_DIST = 0.40  # 40cm
 
             for i in range(NUM_SECTORS):
                 lut = self.ray_lut[i]
                 if len(lut['y']) == 0:
                     continue
 
-                values = risk_map[lut['y'], lut['x']]
-                mask = values > 0
+                # 각 좌표의 실제 거리
+                dy = (lut['y'] - CENTER) * RESOLUTION
+                dx = (lut['x'] - CENTER) * RESOLUTION
+                dist = np.sqrt(dx*dx + dy*dy)
 
-                if np.any(mask):
-                    eff = values[mask] * lut['atten'][mask]
-                    sector_risks[i] = np.max(eff)
+                near = dist < NEAR_DIST
+                if not np.any(near):
+                    sector_risks[i] = 0.0
+                    continue
+
+                vals = risk_map[lut['y'][near], lut['x'][near]]
+
+                if np.any(vals > 0):
+                    sector_risks[i] = np.max(vals)
                 else:
                     sector_risks[i] = 0.0
 
-            # 6. Omega weights
+
+            # ----------------------------------------------------------
+            # 9) Omega weights
+            # ----------------------------------------------------------
             w = np.exp(-ALPHA * sector_risks)
             max_w = np.max(w)
-            if max_w < 1e-6:
-                w[:] = 1.0
-            else:
+            if max_w > 1e-6:
                 w /= max_w
 
-            out_msg = Float32MultiArray()
-            out_msg.data = w.tolist()
-            self.pub_omega.publish(out_msg)
+            msg_out = Float32MultiArray()
+            msg_out.data = w.tolist()
+            self.pub_omega.publish(msg_out)
 
         except Exception as e:
             self.get_logger().error(f"Mega Loop Error: {e}")
@@ -254,10 +286,8 @@ def main(args=None):
                 node.input_params,
                 node.output_params
             ) as pipeline:
-
                 node.pipeline = pipeline
                 rclpy.spin(node)
-
     finally:
         node.destroy_node()
         if rclpy.ok():
