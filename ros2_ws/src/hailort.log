@@ -1,0 +1,159 @@
+[2025-11-27 08:14:36.986] [440] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 08:14:36.992] [440] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 08:14:36.994] [440] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 10:30:37.920] [480] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: NONE, multi_process_service: false
+[2025-11-27 10:30:37.941] [480] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 10:30:37.944] [480] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 10:30:37.946] [480] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 10:30:37.962] [480] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 10:30:37.964] [480] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 10:30:37.974] [480] [HailoRT] [info] [internal_buffer_manager.cpp:202] [print_execution_results] Default Internal buffer planner failed to meet requirements
+[2025-11-27 10:30:37.974] [480] [HailoRT] [info] [internal_buffer_manager.cpp:212] [print_execution_results] Default Internal buffer planner executed successfully
+[2025-11-27 10:30:37.986] [480] [HailoRT] [info] [device_internal.cpp:57] [configure] Configuring HEF took 22.147043 milliseconds
+[2025-11-27 10:30:37.986] [480] [HailoRT] [info] [vdevice.cpp:749] [configure] Configuring HEF on VDevice took 24.420394 milliseconds
+[2025-11-27 10:30:37.986] [480] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 10:30:37.986] [480] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 10:30:38.071] [480] [HailoRT] [info] [core_op.cpp:156] [activate] Activating model took 0.6745 milliseconds. Note that the function is asynchronous and thus the network is not fully activated yet.
+[2025-11-27 10:30:38.071] [480] [HailoRT] [info] [core_op.cpp:156] [activate] Activating model took 0.69761 milliseconds. Note that the function is asynchronous and thus the network is not fully activated yet.
+[2025-11-27 10:30:38.071] [480] [HailoRT] [info] [edge_elements.cpp:52] [create] Created (HwWriteEl13model/input_layer1 | hw_frame_size: 1966080)
+[2025-11-27 10:30:38.072] [480] [HailoRT] [info] [queue_elements.cpp:284] [create] Created (PushQEl13model/input_layer1 | timeout: 10s)
+[2025-11-27 10:30:38.073] [480] [HailoRT] [info] [filter_elements.cpp:101] [create] Created (PreInferEl13model/input_layer1 | Quantization - src_type: FLOAT32, dst_type UINT8, limvals_min: 0, limvals_max: 1 | Reorder - src_order: NHWC, src_shape: (256, 256, 30), dst_order: NHCW, dst_shape: (256, 256, 30))
+[2025-11-27 10:30:38.073] [480] [HailoRT] [info] [vstream.cpp:754] [InputVStreamImpl] Creating model/input_layer1...
+[2025-11-27 10:30:38.073] [480] [HailoRT] [info] [vstream_builder.cpp:102] [create_inputs] Input pipeline 'model/input_layer1': (PreInferEl13model/input_layer1 | Quantization - src_type: FLOAT32, dst_type UINT8, limvals_min: 0, limvals_max: 1 | Reorder - src_order: NHWC, src_shape: (256, 256, 30), dst_order: NHCW, dst_shape: (256, 256, 30)) >> (PushQEl13model/input_layer1 | timeout: 10s) >> (HwWriteEl13model/input_layer1 | hw_frame_size: 1966080) >> HW
+[2025-11-27 10:30:38.073] [480] [HailoRT] [info] [edge_elements.cpp:287] [create] Created (HwReadEl12model/conv17 | hw_frame_size: 2097152)
+[2025-11-27 10:30:38.074] [480] [HailoRT] [info] [queue_elements.cpp:657] [create] Created (PullQEl_hw_read12model/conv17)
+[2025-11-27 10:30:38.074] [480] [HailoRT] [info] [filter_elements.cpp:375] [create] Created (PostInferEl12model/conv17 | Quantization - src_type: UINT8, dst_type FLOAT32, limvals_min: -12.6866, limvals_max: 9.02537 | Reorder - src_order: FCR, src_shape: (256, 256, 32), dst_order: FCR, dst_shape: (256, 256, 30))
+[2025-11-27 10:30:38.074] [480] [HailoRT] [info] [queue_elements.cpp:800] [create] Created (UserBuffQEl12model/conv17 | timeout: 10s)
+[2025-11-27 10:30:38.074] [480] [HailoRT] [info] [vstream.cpp:1114] [OutputVStreamImpl] Creating model/conv17...
+[2025-11-27 10:30:38.074] [480] [HailoRT] [info] [vstream_builder.cpp:220] [create_outputs] Output pipeline 'model/conv17': HW >> (HwReadEl12model/conv17 | hw_frame_size: 2097152) >> (PullQEl_hw_read12model/conv17) >> (PostInferEl12model/conv17 | Quantization - src_type: UINT8, dst_type FLOAT32, limvals_min: -12.6866, limvals_max: 9.02537 | Reorder - src_order: FCR, src_shape: (256, 256, 32), dst_order: FCR, dst_shape: (256, 256, 30)) >> (UserBuffQEl12model/conv17 | timeout: 10s)
+[2025-11-27 10:32:22.675] [492] [HailoRT] [info] [vdevice_native_stream.cpp:331] [read_impl] Failed read from stream HAILO_STREAM_ABORT(63) (device: 0001:01:00.0)
+[2025-11-27 10:32:22.675] [492] [HailoRT] [info] [edge_elements.cpp:396] [run_pull] Reading from stream was aborted!
+[2025-11-27 10:32:22.675] [492] [HailoRT] [info] [queue_elements.cpp:738] [run_in_thread] run_pull of queue element PullQEl_hw_read12model/conv17 was aborted!
+[2025-11-27 10:32:22.675] [493] [HailoRT] [info] [queue_elements.cpp:855] [run_in_thread] Shutdown event was signaled in dequeue of UserBuffQEl12model/conv17!
+[2025-11-27 10:32:22.675] [492] [HailoRT] [info] [queue_elements.cpp:68] [operator()] Thread in element PullQEl_hw_read12model/conv17 is not running anymore, exiting..
+[2025-11-27 10:32:22.675] [480] [HailoRT] [info] [queue_elements.cpp:46] [~BaseQueueElement] Queue element PullQEl_hw_read12model/conv17 has 0 frames in his Queue on destruction
+[2025-11-27 10:32:22.675] [480] [HailoRT] [info] [queue_elements.cpp:46] [~BaseQueueElement] Queue element UserBuffQEl12model/conv17 has 0 frames in his Queue on destruction
+[2025-11-27 10:32:22.675] [480] [HailoRT] [info] [queue_elements.cpp:46] [~BaseQueueElement] Queue element PushQEl13model/input_layer1 has 0 frames in his Queue on destruction
+[2025-11-27 10:32:22.676] [480] [HailoRT] [info] [core_op.cpp:186] [deactivate] Deactivating took 0.396315 ms
+[2025-11-27 10:32:22.676] [480] [HailoRT] [info] [core_op.cpp:186] [deactivate] Deactivating took 0.408574 ms
+[2025-11-27 10:38:56.902] [2978] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: NONE, multi_process_service: false
+[2025-11-27 10:38:56.914] [2978] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 10:38:56.916] [2978] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 10:38:56.916] [2978] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 10:38:56.928] [2978] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 10:38:56.928] [2978] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 10:38:56.934] [2978] [HailoRT] [info] [internal_buffer_manager.cpp:202] [print_execution_results] Default Internal buffer planner failed to meet requirements
+[2025-11-27 10:38:56.934] [2978] [HailoRT] [info] [internal_buffer_manager.cpp:212] [print_execution_results] Default Internal buffer planner executed successfully
+[2025-11-27 10:38:56.952] [2978] [HailoRT] [info] [device_internal.cpp:57] [configure] Configuring HEF took 24.125163 milliseconds
+[2025-11-27 10:38:56.952] [2978] [HailoRT] [info] [vdevice.cpp:749] [configure] Configuring HEF on VDevice took 24.740051 milliseconds
+[2025-11-27 10:38:56.952] [2978] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 10:38:56.952] [2978] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 10:48:03.310] [2990] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: NONE, multi_process_service: false
+[2025-11-27 10:48:03.323] [2990] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 10:48:03.325] [2990] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 10:48:03.325] [2990] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 10:48:03.348] [2990] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 10:48:03.349] [2990] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 10:48:03.355] [2990] [HailoRT] [info] [internal_buffer_manager.cpp:202] [print_execution_results] Default Internal buffer planner failed to meet requirements
+[2025-11-27 10:48:03.355] [2990] [HailoRT] [info] [internal_buffer_manager.cpp:212] [print_execution_results] Default Internal buffer planner executed successfully
+[2025-11-27 10:48:03.370] [2990] [HailoRT] [info] [device_internal.cpp:57] [configure] Configuring HEF took 21.817161 milliseconds
+[2025-11-27 10:48:03.370] [2990] [HailoRT] [info] [vdevice.cpp:749] [configure] Configuring HEF on VDevice took 22.327735 milliseconds
+[2025-11-27 10:48:03.371] [2990] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 10:48:03.371] [2990] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 10:48:30.207] [3002] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: NONE, multi_process_service: false
+[2025-11-27 10:48:30.219] [3002] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 10:48:30.221] [3002] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 10:48:30.221] [3002] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 10:48:30.231] [3002] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 10:48:30.231] [3002] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 10:48:30.237] [3002] [HailoRT] [info] [internal_buffer_manager.cpp:202] [print_execution_results] Default Internal buffer planner failed to meet requirements
+[2025-11-27 10:48:30.237] [3002] [HailoRT] [info] [internal_buffer_manager.cpp:212] [print_execution_results] Default Internal buffer planner executed successfully
+[2025-11-27 10:48:30.259] [3002] [HailoRT] [info] [device_internal.cpp:57] [configure] Configuring HEF took 27.368974 milliseconds
+[2025-11-27 10:48:30.259] [3002] [HailoRT] [info] [vdevice.cpp:749] [configure] Configuring HEF on VDevice took 28.225419 milliseconds
+[2025-11-27 10:48:30.259] [3002] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 10:48:30.259] [3002] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 10:48:30.275] [3002] [HailoRT] [info] [core_op.cpp:156] [activate] Activating model took 0.698185 milliseconds. Note that the function is asynchronous and thus the network is not fully activated yet.
+[2025-11-27 10:48:30.275] [3002] [HailoRT] [info] [core_op.cpp:156] [activate] Activating model took 0.718574 milliseconds. Note that the function is asynchronous and thus the network is not fully activated yet.
+[2025-11-27 10:48:30.275] [3002] [HailoRT] [info] [edge_elements.cpp:52] [create] Created (HwWriteEl13model/input_layer1 | hw_frame_size: 1966080)
+[2025-11-27 10:48:30.275] [3002] [HailoRT] [info] [queue_elements.cpp:284] [create] Created (PushQEl13model/input_layer1 | timeout: 10s)
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [filter_elements.cpp:101] [create] Created (PreInferEl13model/input_layer1 | Quantization - src_type: FLOAT32, dst_type UINT8, limvals_min: 0, limvals_max: 1 | Reorder - src_order: NHWC, src_shape: (256, 256, 30), dst_order: NHCW, dst_shape: (256, 256, 30))
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [vstream.cpp:754] [InputVStreamImpl] Creating model/input_layer1...
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [vstream_builder.cpp:102] [create_inputs] Input pipeline 'model/input_layer1': (PreInferEl13model/input_layer1 | Quantization - src_type: FLOAT32, dst_type UINT8, limvals_min: 0, limvals_max: 1 | Reorder - src_order: NHWC, src_shape: (256, 256, 30), dst_order: NHCW, dst_shape: (256, 256, 30)) >> (PushQEl13model/input_layer1 | timeout: 10s) >> (HwWriteEl13model/input_layer1 | hw_frame_size: 1966080) >> HW
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [edge_elements.cpp:287] [create] Created (HwReadEl12model/conv17 | hw_frame_size: 2097152)
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [queue_elements.cpp:657] [create] Created (PullQEl_hw_read12model/conv17)
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [filter_elements.cpp:375] [create] Created (PostInferEl12model/conv17 | Quantization - src_type: UINT8, dst_type FLOAT32, limvals_min: -12.6866, limvals_max: 9.02537 | Reorder - src_order: FCR, src_shape: (256, 256, 32), dst_order: FCR, dst_shape: (256, 256, 30))
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [queue_elements.cpp:800] [create] Created (UserBuffQEl12model/conv17 | timeout: 10s)
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [vstream.cpp:1114] [OutputVStreamImpl] Creating model/conv17...
+[2025-11-27 10:48:30.277] [3002] [HailoRT] [info] [vstream_builder.cpp:220] [create_outputs] Output pipeline 'model/conv17': HW >> (HwReadEl12model/conv17 | hw_frame_size: 2097152) >> (PullQEl_hw_read12model/conv17) >> (PostInferEl12model/conv17 | Quantization - src_type: UINT8, dst_type FLOAT32, limvals_min: -12.6866, limvals_max: 9.02537 | Reorder - src_order: FCR, src_shape: (256, 256, 32), dst_order: FCR, dst_shape: (256, 256, 30)) >> (UserBuffQEl12model/conv17 | timeout: 10s)
+[2025-11-27 10:51:16.452] [3014] [HailoRT] [info] [vdevice_native_stream.cpp:331] [read_impl] Failed read from stream HAILO_STREAM_ABORT(63) (device: 0001:01:00.0)
+[2025-11-27 10:51:16.452] [3014] [HailoRT] [info] [edge_elements.cpp:396] [run_pull] Reading from stream was aborted!
+[2025-11-27 10:51:16.452] [3014] [HailoRT] [info] [queue_elements.cpp:738] [run_in_thread] run_pull of queue element PullQEl_hw_read12model/conv17 was aborted!
+[2025-11-27 10:51:16.452] [3015] [HailoRT] [info] [queue_elements.cpp:855] [run_in_thread] Shutdown event was signaled in dequeue of UserBuffQEl12model/conv17!
+[2025-11-27 10:51:16.453] [3014] [HailoRT] [info] [queue_elements.cpp:68] [operator()] Thread in element PullQEl_hw_read12model/conv17 is not running anymore, exiting..
+[2025-11-27 10:51:16.453] [3002] [HailoRT] [info] [queue_elements.cpp:46] [~BaseQueueElement] Queue element PullQEl_hw_read12model/conv17 has 0 frames in his Queue on destruction
+[2025-11-27 10:51:16.453] [3015] [HailoRT] [info] [queue_elements.cpp:68] [operator()] Thread in element UserBuffQEl12model/conv17 is not running anymore, exiting..
+[2025-11-27 10:51:16.453] [3002] [HailoRT] [info] [queue_elements.cpp:46] [~BaseQueueElement] Queue element UserBuffQEl12model/conv17 has 0 frames in his Queue on destruction
+[2025-11-27 10:51:16.453] [3002] [HailoRT] [info] [queue_elements.cpp:46] [~BaseQueueElement] Queue element PushQEl13model/input_layer1 has 0 frames in his Queue on destruction
+[2025-11-27 10:51:16.453] [3002] [HailoRT] [info] [core_op.cpp:186] [deactivate] Deactivating took 0.412278 ms
+[2025-11-27 10:51:16.453] [3002] [HailoRT] [info] [core_op.cpp:186] [deactivate] Deactivating took 0.423259 ms
+[2025-11-27 11:01:41.132] [7126] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: NONE, multi_process_service: false
+[2025-11-27 11:01:41.143] [7126] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 11:01:41.145] [7126] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 11:01:41.145] [7126] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 11:01:41.155] [7126] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:01:41.156] [7126] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:01:41.162] [7126] [HailoRT] [info] [internal_buffer_manager.cpp:202] [print_execution_results] Default Internal buffer planner failed to meet requirements
+[2025-11-27 11:01:41.162] [7126] [HailoRT] [info] [internal_buffer_manager.cpp:212] [print_execution_results] Default Internal buffer planner executed successfully
+[2025-11-27 11:01:41.178] [7126] [HailoRT] [info] [device_internal.cpp:57] [configure] Configuring HEF took 22.879957 milliseconds
+[2025-11-27 11:01:41.178] [7126] [HailoRT] [info] [vdevice.cpp:749] [configure] Configuring HEF on VDevice took 23.387031 milliseconds
+[2025-11-27 11:01:41.179] [7126] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:01:41.179] [7126] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:01:41.198] [7126] [HailoRT] [info] [core_op.cpp:156] [activate] Activating model took 1.317073 milliseconds. Note that the function is asynchronous and thus the network is not fully activated yet.
+[2025-11-27 11:01:41.198] [7126] [HailoRT] [info] [core_op.cpp:156] [activate] Activating model took 1.338351 milliseconds. Note that the function is asynchronous and thus the network is not fully activated yet.
+[2025-11-27 11:01:41.198] [7126] [HailoRT] [info] [edge_elements.cpp:52] [create] Created (HwWriteEl13model/input_layer1 | hw_frame_size: 1966080)
+[2025-11-27 11:01:41.198] [7126] [HailoRT] [info] [queue_elements.cpp:284] [create] Created (PushQEl13model/input_layer1 | timeout: 10s)
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [filter_elements.cpp:101] [create] Created (PreInferEl13model/input_layer1 | Quantization - src_type: FLOAT32, dst_type UINT8, limvals_min: 0, limvals_max: 1 | Reorder - src_order: NHWC, src_shape: (256, 256, 30), dst_order: NHCW, dst_shape: (256, 256, 30))
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [vstream.cpp:754] [InputVStreamImpl] Creating model/input_layer1...
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [vstream_builder.cpp:102] [create_inputs] Input pipeline 'model/input_layer1': (PreInferEl13model/input_layer1 | Quantization - src_type: FLOAT32, dst_type UINT8, limvals_min: 0, limvals_max: 1 | Reorder - src_order: NHWC, src_shape: (256, 256, 30), dst_order: NHCW, dst_shape: (256, 256, 30)) >> (PushQEl13model/input_layer1 | timeout: 10s) >> (HwWriteEl13model/input_layer1 | hw_frame_size: 1966080) >> HW
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [edge_elements.cpp:287] [create] Created (HwReadEl12model/conv17 | hw_frame_size: 2097152)
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [queue_elements.cpp:657] [create] Created (PullQEl_hw_read12model/conv17)
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [filter_elements.cpp:375] [create] Created (PostInferEl12model/conv17 | Quantization - src_type: UINT8, dst_type FLOAT32, limvals_min: -12.6866, limvals_max: 9.02537 | Reorder - src_order: FCR, src_shape: (256, 256, 32), dst_order: FCR, dst_shape: (256, 256, 30))
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [queue_elements.cpp:800] [create] Created (UserBuffQEl12model/conv17 | timeout: 10s)
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [vstream.cpp:1114] [OutputVStreamImpl] Creating model/conv17...
+[2025-11-27 11:01:41.200] [7126] [HailoRT] [info] [vstream_builder.cpp:220] [create_outputs] Output pipeline 'model/conv17': HW >> (HwReadEl12model/conv17 | hw_frame_size: 2097152) >> (PullQEl_hw_read12model/conv17) >> (PostInferEl12model/conv17 | Quantization - src_type: UINT8, dst_type FLOAT32, limvals_min: -12.6866, limvals_max: 9.02537 | Reorder - src_order: FCR, src_shape: (256, 256, 32), dst_order: FCR, dst_shape: (256, 256, 30)) >> (UserBuffQEl12model/conv17 | timeout: 10s)
+[2025-11-27 11:07:28.933] [7528] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: ROUND_ROBIN, multi_process_service: false
+[2025-11-27 11:07:28.946] [7528] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 11:07:28.947] [7528] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 11:07:28.947] [7528] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 11:07:28.972] [7528] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:07:28.972] [7528] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:07:28.972] [7528] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:07:28.972] [7528] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:07:28.973] [7528] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:16:53.832] [7544] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: ROUND_ROBIN, multi_process_service: false
+[2025-11-27 11:16:53.843] [7544] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 11:16:53.845] [7544] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 11:16:53.845] [7544] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 11:16:53.862] [7544] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:16:53.862] [7544] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:16:53.863] [7544] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:16:53.863] [7544] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:16:53.863] [7544] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:22:48.812] [7571] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: ROUND_ROBIN, multi_process_service: false
+[2025-11-27 11:22:48.823] [7571] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 11:22:48.825] [7571] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 11:22:48.825] [7571] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 11:22:48.843] [7571] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:22:48.843] [7571] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:22:48.843] [7571] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:22:48.843] [7571] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:22:48.844] [7571] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:24:11.219] [7589] [HailoRT] [info] [vdevice.cpp:523] [create] Creating vdevice with params: device_count: 1, scheduling_algorithm: ROUND_ROBIN, multi_process_service: false
+[2025-11-27 11:24:11.231] [7589] [HailoRT] [info] [device.cpp:49] [Device] OS Version: Linux 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1~bookworm (2025-09-16) aarch64
+[2025-11-27 11:24:11.233] [7589] [HailoRT] [info] [control.cpp:108] [control__parse_identify_results] firmware_version is: 4.20.0
+[2025-11-27 11:24:11.233] [7589] [HailoRT] [info] [vdevice.cpp:651] [create] VDevice Infos: 0001:01:00.0
+[2025-11-27 11:24:11.250] [7589] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:24:11.250] [7589] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:24:11.250] [7589] [HailoRT] [info] [hef.cpp:1929] [get_network_group_and_network_name] No name was given. Addressing all networks of default network_group: model
+[2025-11-27 11:24:11.251] [7589] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.
+[2025-11-27 11:24:11.251] [7589] [HailoRT] [warning] [device_internal.cpp:616] [check_hef_is_compatible] HEF was compiled for Hailo8L device, while the device itself is Hailo8. This will result in lower performance.

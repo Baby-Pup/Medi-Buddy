@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>dwb_omega_critic</name>
+  <version>0.1.0</version>
+  <description>Custom DWB Trajectory Critic using omega direction weights</description>
+
+  <maintainer email="you@example.com">YourName</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>dwb_core</depend>
+  <depend>pluginlib</depend>
+  <depend>nav_2d_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+
+    <!-- ⭐ pluginlib 공식 규약 태그 -->
+    <pluginlib plugin="${prefix}/pluginlib.xml" />
+
+    <!-- ⭐ base class 패키지(dwb_core)에게 '이 패키지가 critic을 제공한다'고 알림 -->
+    <dwb_core plugin="${prefix}/pluginlib.xml" />
+  </export>
+</package>
