@@ -40,6 +40,8 @@ CELL_SIZE = 0.1
 DIST_DECAY = 0.4
 RISK_FRAME = 10     # t+10 frame
 
+THRESH = 0.0  # 섹터 위험 임계값
+
 
 class MegaInferenceNode(Node):
     def __init__(self):
@@ -251,7 +253,8 @@ class MegaInferenceNode(Node):
                 vals = risk_map[lut['y'][near], lut['x'][near]]
 
                 if np.any(vals > 0):
-                    sector_risks[i] = np.max(vals)
+                    r = np.max(vals)
+                    sector_risks[i] = r if r >= THRESH else 0.0
                 else:
                     sector_risks[i] = 0.0
 

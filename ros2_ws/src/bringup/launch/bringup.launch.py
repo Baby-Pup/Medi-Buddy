@@ -22,27 +22,27 @@ def launch_setup(context):
         PythonLaunchDescriptionSource(
             os.path.join(controller_package_path, 'launch/controller.launch.py')),
     )
-    
-    depth_camera_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(peripherals_package_path, 'launch/depth_camera.launch.py')),
-    )
+#    
+#    depth_camera_launch = IncludeLaunchDescription(
+#        PythonLaunchDescriptionSource(
+#            os.path.join(peripherals_package_path, 'launch/depth_camera.launch.py')),
+#    )
 
     lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(peripherals_package_path, 'launch/lidar.launch.py')),
     )
 
-    rosbridge_websocket_launch = ExecuteProcess(
-            cmd=['ros2', 'launch', 'rosbridge_server', 'rosbridge_websocket_launch.xml'],
-            output='screen'
-        )
+#    rosbridge_websocket_launch = ExecuteProcess(
+#            cmd=['ros2', 'launch', 'rosbridge_server', 'rosbridge_websocket_launch.xml'],
+#            output='screen'
+#        )
 
-    web_video_server_node = Node(
-        package='web_video_server',
-        executable='web_video_server',
-        output='screen',
-    )
+#    web_video_server_node = Node(
+#        package='web_video_server',
+#        executable='web_video_server',
+#        output='screen',
+#    )
 
     start_app_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -71,10 +71,10 @@ def launch_setup(context):
     return [
             startup_check_node,
             controller_launch,
-            depth_camera_launch,
+            #           depth_camera_launch,
             lidar_launch,
-            rosbridge_websocket_launch,
-            web_video_server_node,
+            #rosbridge_websocket_launch,
+            #web_video_server_node,
             start_app_launch,
             joystick_control_launch,
             init_pose_launch,
