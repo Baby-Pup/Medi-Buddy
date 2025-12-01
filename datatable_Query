@@ -1,0 +1,11 @@
+CREATE TABLE medical_record (
+    patient_id   INTEGER                NOT NULL,          -- 생년월일 (예: 19990409)
+    patient_name VARCHAR(50),                             -- 환자 이름
+    diagnosis    VARCHAR(100),                            -- 진단/메모
+    visit_date   DATE,                                    -- 내원일
+    record_id    SERIAL PRIMARY KEY                       -- 진료 레코드 ID (자동 증가)
+);
+
+ALTER TABLE medical_record
+ADD CONSTRAINT unq_all_columns
+UNIQUE (patient_id, patient_name, diagnosis, visit_date);
