@@ -9,7 +9,7 @@ import threading
 import time
 
 # 카메라 ID 설정 (2번 디바이스 사용)
-CAMERA_DEVICE_ID = 0
+CAMERA_DEVICE_ID = 2
 # 발행할 토픽 이름
 IMAGE_TOPIC = '/camera/image_raw'
 
