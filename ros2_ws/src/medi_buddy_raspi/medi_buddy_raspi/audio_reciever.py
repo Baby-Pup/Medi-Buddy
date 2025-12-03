@@ -24,7 +24,7 @@ class AudioRecieverNode(Node):
         self.tts_done_pub = self.create_publisher(String, "robot_status", 10)
 
 
-        self.device = "plughw:3,0"  # USB 오디오 장치
+        self.device = "plughw:2,0"  # USB 오디오 장치
         self.get_logger().info("🎧 Audio Player Node Started (MP3 → WAV → aplay)")
 
     def callback_tts_audio(self, msg):
