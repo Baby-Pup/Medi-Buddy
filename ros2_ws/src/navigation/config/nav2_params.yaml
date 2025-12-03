@@ -30,7 +30,7 @@ amcl:
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: true
-    transform_tolerance: 1.0
+    transform_tolerance: 3.0
     update_min_a: 0.2
     update_min_d: 0.25
     z_hit: 0.5
@@ -58,7 +58,7 @@ bt_navigator:
     global_frame: map
     robot_base_frame: base_footprint
     odom_topic: /odom
-    bt_loop_duration: 10
+    bt_loop_duration: 100 # 기존 값 : 10
     default_server_timeout: 20
     #enable_groot_monitoring: True
     #groot_zmq_publisher_port: 1666
