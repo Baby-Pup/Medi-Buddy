@@ -1,25 +1,30 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, ExecuteProcess, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 import os
 
-
 def generate_launch_description():
 
     navigation_package_path = get_package_share_directory('navigation')
 
+    # ---------------------------------------------------------
+    # ⚠️ [수정 1] 본인이 만든 파이썬 파일(가드)의 절대 경로를 입력하세요
+    # ---------------------------------------------------------
+    ai_script_path = '/home/ubuntu/ros2_ws/src/navigation/scripts/hospital_robot_main.py' 
+    # (파일 이름이 hospital_guard.py가 아니라면 수정하세요)
+
     map_arg = DeclareLaunchArgument(
         'map',
-        default_value='/home/ubuntu/ros2_ws/src/slam/maps/map_hj.yaml',
+        default_value='/home/ubuntu/ros2_ws/src/slam/maps/map_medibuddy.yaml',
         description='Map yaml file'
     )
 
     map_path = LaunchConfiguration('map')
     
-    # Camera publisher
+    # Camera publisher (하드웨어 드라이버)
     camera_publisher = Node(
             package='medi_buddy_raspi',
             executable='camera_publisher',
@@ -62,7 +67,7 @@ def generate_launch_description():
     # Semantic router
     semantic_router = Node(
         package='navigation',
-        executable='semantic_router_node',  # setup.py entry_points와 동일해야 함
+        executable='semantic_router_node',
         name='semantic_router',
         output='screen',
         parameters=[{
@@ -78,11 +83,19 @@ def generate_launch_description():
         launch_arguments={'map': map_path}.items()
     )
 
-    semantic_nav_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(navigation_package_path, 'launch/yhk_semantic_nav.launch.py')
-        ),
-        launch_arguments={'map': map_path}.items()
+    # ---------------------------------------------------------
+    # ⚠️ [수정 2] AI 가드 실행 설정 (TimerAction 사용)
+    # Nav2와 카메라가 완전히 켜질 때까지 10초 기다렸다가 실행합니다.
+    # ---------------------------------------------------------
+    ai_guard_runner = TimerAction(
+        period=10.0, 
+        actions=[
+            ExecuteProcess(
+                cmd=['python3', ai_script_path],
+                output='screen',
+                name='hospital_safety_guard'
+            )
+        ]
     )
 
     return LaunchDescription([
@@ -93,6 +106,6 @@ def generate_launch_description():
         audio_publisher,
         audio_reciever,
         semantic_router,
-        nav_bringup
-        #semantic_nav_launch
+        nav_bringup,
+        ai_guard_runner # 👈 [수정 3] 여기에 추가
     ])
