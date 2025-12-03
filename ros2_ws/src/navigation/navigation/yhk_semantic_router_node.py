@@ -48,7 +48,7 @@ class SemanticRouterNode(Node):
         os.makedirs(os.path.dirname(self.poi_yaml_path), exist_ok=True)
         self._poi, self._poi_mtime = {}, 0.0
 
-        # home pose 로드는 유지하지만 자동 이동에는 사용하지 않음
+        # home pose 로드
         nav2_param_path = os.path.join(
             get_package_share_directory("navigation"),
             "config",
@@ -63,6 +63,13 @@ class SemanticRouterNode(Node):
         self._detour_mode = False
         self._current_goal_handle = None
         self._arrived_waiting = False
+        self._initial_start = True
+
+        # ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇
+        # 🔥 새로 추가된 변수 (OCR 제어)
+        self._ocr_paused = False
+        self._pause_saved_goal = None
+        # ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
 
         # ROS interfaces
         self._dest_sub = self.create_subscription(
@@ -75,15 +82,25 @@ class SemanticRouterNode(Node):
             Bool, "/face_detection_status", self.on_face_encoded, 10
         )
 
+        # OCR 제어 구독
+        self._ocr_req_sub = self.create_subscription(
+            Bool, "/ocr_request", self.on_ocr_request, 10
+        )
+        self._ocr_res_sub = self.create_subscription(
+            String, "/ocr_result", self.on_ocr_result, 10
+        )
+
         self._event_pub = self.create_publisher(NavEvent, "/nav_event", 10)
         self._current_dest_pub = self.create_publisher(String, "/current_destination", 10)
+        self._dest_arrival_pub = self.create_publisher(Bool, "/destination_arrival", 10)
+        self._goal_pub = self.create_publisher(PoseStamped, "/goal_pose", 10)
+
         self._nav_client = ActionClient(self, NavigateToPose, "/navigate_to_pose")
 
     # -------------------------------------------------------
     # Common: name normalize
     # -------------------------------------------------------
     def _normalize(self, name: str) -> str:
-        """모든 목적지 이름을 strip().lower()로 정규화"""
         if not name:
             return ""
         return name.strip().lower()
@@ -141,20 +158,22 @@ class SemanticRouterNode(Node):
         self._detour_mode = False
         self._pending_goal = None
         self._arrived_waiting = False
+        self._initial_start = True
 
         self.get_logger().info(f"📜 루트 수신: {list(self._route_list)}")
-
         self._go_next_in_route()
 
     def on_destination_request(self, msg: String):
+        if self._ocr_paused:
+            self.get_logger().info("💤 OCR 중 — detour 무시됨")
+            return
+
         name = self._normalize(msg.data)
         if not name:
             return
-
         if name in self._route_list:
             return
 
-        # detour 복귀 목표 저장
         if self._arrived_waiting:
             self._pending_goal = self._route_list[0] if self._route_list else None
         else:
@@ -163,29 +182,71 @@ class SemanticRouterNode(Node):
         self._handle_detour(name)
 
     def on_face_encoded(self, msg):
+        if self._ocr_paused:
+            self.get_logger().info("💤 OCR 중 — 얼굴 인식 무시")
+            return
+
         if msg.data:
+            # Detour 복귀 시에는 pending_goal로 복귀
             if self._detour_mode and self._pending_goal:
                 goal = self._pending_goal
                 self._pending_goal = None
                 self._detour_mode = False
 
-                if goal != "__home__":      # home 이동 금지
+                if goal != "__home__":
                     self._go_to(goal)
                 return
 
-            # route 있을 때만 다음 목적지로 이동
-            if self._route_list:
+            # ✅ Fix 2 적용: '도착 대기 상태'에서만 다음 목적지로 진행
+            if self._arrived_waiting and self._route_list:
+                self._arrived_waiting = False
                 self._go_next_in_route()
+
+    # -------------------------------------------------------
+    # OCR 제어 콜백
+    # -------------------------------------------------------
+    def on_ocr_request(self, msg: Bool):
+        if msg.data:
+            self.get_logger().info("🛑 OCR 요청 — Nav2 일시 정지!")
+
+            if self._current_goal:
+                self._pause_saved_goal = self._current_goal
+
+            self._ocr_paused = True
+
+            if self._current_goal_handle:
+                try:
+                    self._current_goal_handle.cancel_goal_async()
+                except Exception:
+                    pass
+
+    def on_ocr_result(self, msg: String):
+        self.get_logger().info("📘 OCR 결과 수신 — 주행 재개!")
+
+        if not self._ocr_paused:
+            return
+
+        self._ocr_paused = False
+
+        if self._pause_saved_goal:
+            goal = self._pause_saved_goal
+            self._pause_saved_goal = None
+            self.get_logger().info(f"🚗 OCR 종료 — '{goal}' 로 주행 재개")
+            self._go_to(goal)
 
     # -------------------------------------------------------
     # Navigation
     # -------------------------------------------------------
     def _go_next_in_route(self):
+        if self._ocr_paused:
+            self.get_logger().info("💤 OCR 중 — 경로 진행 중단")
+            return
+
         if not self._route_list:
-            return  # home 이동 삭제
+            return
 
         next_dest = self._route_list.popleft()
-        self._publish_current_destination(next_dest) 
+        self._publish_current_destination(next_dest)
         self._go_to(next_dest)
 
     def _handle_detour(self, name: str):
@@ -202,6 +263,10 @@ class SemanticRouterNode(Node):
         self._go_to(name)
 
     def _go_to(self, name: str):
+        if self._ocr_paused:
+            self.get_logger().info("💤 OCR 중 — go_to 요청 무시")
+            return
+
         name = self._normalize(name)
 
         pose = self._get_pose_for_name(name)
@@ -209,9 +274,9 @@ class SemanticRouterNode(Node):
             self._publish_event("CANCELLED", name)
             return
 
-        if not self._nav_client.wait_for_server(timeout_sec=5.0):
-            self._publish_event("CANCELLED", name)
-            return
+        self.get_logger().info("Nav2 action server 대기 중...")
+        self._nav_client.wait_for_server()
+        self.get_logger().info("Nav2 action server 연결 완료!")
 
         x, y, z = pose
 
@@ -222,6 +287,10 @@ class SemanticRouterNode(Node):
         ps.pose.position.y = y
         ps.pose.position.z = z
         ps.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+
+        # Guard 노드에도 좌표 공유
+        self._goal_pub.publish(ps)
+        self.get_logger().info(f"📢 [Guard Notification] Goal Published to /goal_pose")
 
         goal = NavigateToPose.Goal()
         goal.pose = ps
@@ -234,7 +303,7 @@ class SemanticRouterNode(Node):
         future.add_done_callback(lambda fut: self._on_goal_response(name, fut))
 
     # -------------------------------------------------------
-    # Home (보존하되 자동 호출 없음)
+    # Home 
     # -------------------------------------------------------
     def _go_home(self):
         x, y, yaw = self._home_pose
@@ -252,7 +321,6 @@ class SemanticRouterNode(Node):
         goal.pose = ps
 
         self._publish_event("RETURN_HOME", "home")
-
         self._arrived_waiting = False
         self._current_goal = "home"
 
@@ -285,6 +353,7 @@ class SemanticRouterNode(Node):
 
         if result.status == GoalStatus.STATUS_SUCCEEDED:
             self._publish_event("ARRIVED", name)
+            self._publish_destination_arrival(True)
         else:
             self._publish_event("CANCELLED", name)
 
@@ -303,7 +372,12 @@ class SemanticRouterNode(Node):
         msg.data = name
         self._current_dest_pub.publish(msg)
         self.get_logger().info(f"[PUB] current_destination → {name}")
-
+    
+    def _publish_destination_arrival(self, flag: bool):
+        msg = Bool()
+        msg.data = flag
+        self._dest_arrival_pub.publish(msg)
+        self.get_logger().info("📍 목적지 도착: /destination_arrival=True 퍼블리시")
 
 
 def main(args=None):
@@ -314,3 +388,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
