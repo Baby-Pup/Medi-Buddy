@@ -14,13 +14,13 @@ controller_server:
     # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
-      movement_time_allowance: 1000.0 # 원래값: 10.0
+      required_movement_radius: 0.1 #0.5 목표 지점까지 최소 0.5m 이상 이동해야 진행 중으로 판단합니다.이 값은 너무 큽니다. 목표에 도달했음에도 불구하고 이 기준에 미치지 못하면, 진행 상태가 "목표에 도달하지 못했다"라고 판단될 수 있습니다. 이 값을 줄여보세요. 예를 들어, 0.1m 정도로 설정하면 더 민감하게 반응할 수 있습니다.
+      movement_time_allowance: 1000.0 #10.0 이 시간 동안 아무런 움직임이 없으면 복구 행동에 들어감.
 
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.10 # 0.01
+      xy_goal_tolerance: 0.3 # 원래 0.01 - 0.25 - 목표의 X, Y 좌표에 대한 허용 오차. 여기서는 1cm로 설정되어 있습니다.
       yaw_goal_tolerance: 0.25 # 0.25
     # DWB parameters
     FollowPath:
@@ -47,8 +47,8 @@ controller_server:
       linear_granularity: 0.05
       angular_granularity: 0.025    
       transform_tolerance: 0.2
-      xy_goal_tolerance: 0.01 # 0.25
-      trans_stopped_velocity: 0.05 # 0.25
+      xy_goal_tolerance: 0.3 # 0.01 - 0.25 : 이건 뭔 차인지 모르겠는데 혹시 몰라서 일단 바꿈.
+      trans_stopped_velocity: 0.05 # 0.25 trans_stopped_velocity: 0.25는 로봇이 0.25m/s 이하로 이동하면 멈춘 것으로 간주하는 기준입니다. 로봇이 아주 느리게 이동 중일 경우, 이 값보다 작을 때 멈춘 것으로 판단되기 때문에 적절한 값으로 조정이 필요할 수 있습니다. 이를 0.1m/s로 줄여 보세요.
       short_circuit_trajectory_evaluation: True
       stateful: True
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
