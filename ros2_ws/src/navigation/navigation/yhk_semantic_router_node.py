@@ -354,11 +354,13 @@ class SemanticRouterNode(Node):
         if result.status == GoalStatus.STATUS_SUCCEEDED:
             self._publish_event("ARRIVED", name)
             self._publish_destination_arrival(True)
+            self._arrived_waiting = True
         else:
             self._publish_event("CANCELLED", name)
+            self._arrived_waiting = False
 
         self._current_goal = None
-        self._arrived_waiting = True
+        # self._arrived_waiting = True
 
     # -------------------------------------------------------
     def _publish_event(self, event_type: str, target: str):
