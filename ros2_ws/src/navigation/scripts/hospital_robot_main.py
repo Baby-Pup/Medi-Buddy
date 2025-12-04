@@ -125,7 +125,9 @@ class GuardNode(Node):
             Image, DEPTH_TOPIC_NAME, self.depth_callback, qos_profile_sensor_data)
         self.create_subscription(PoseStamped, GOAL_TOPIC, self.goal_callback, 10)
         self.pub_cmd = self.create_publisher(Twist, CMD_VEL_TOPIC, 10)
+        self.goal_pub = self.create_publisher(PoseStamped, "/goal_pose", 10)
         self.bridge = CvBridge()
+        
 
     def rgb_callback(self, msg):
         global global_frame_rgb
@@ -319,9 +321,17 @@ def main(args=None):
                                 if is_paused_by_guard:
                                     # 멈춰있던 상태라면, 점수가 RESUME_THRESHOLD(2.0m 수준) 이하로 떨어져야 출발
                                     if risk_score <= RESUME_THRESHOLD:
-                                        print(f"✅ [안전] Risk: {risk_score:.1f}% (거리: {detected_dist:.2f}m) -> 재출발")
-                                        current_goal_msg.header.stamp = navigator.get_clock().now().to_msg()
-                                        navigator.goToPose(current_goal_msg)
+                                        print(f"재출발")
+                                        # Nav2에 직접 goToPose 하지 않음
+                                        # SemanticRouter가 보낸 /goal_pose를 다시 발행해서 "현재 목적지 재요청"
+
+                                        resend_msg = PoseStamped()
+                                        resend_msg.header = current_goal_msg.header
+                                        resend_msg.header.stamp = node.get_clock().now().to_msg()
+                                        resend_msg.pose = current_goal_msg.pose
+
+                                        node.goal_pub.publish(resend_msg)
+
                                         is_paused_by_guard = False
                                     else:
                                         # 아직 2.0m 안쪽임 (1.5m ~ 2.0m 사이) -> 계속 대기
